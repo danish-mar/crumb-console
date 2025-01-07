@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <main class="">
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <!-- Today's Revenue -->
+            <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.1s">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Today's Revenue</p>
+                        <h3 class="text-2xl font-bold accent-red">$125.6</h3>
+                        <p class="text-sm text-gray-400">52 from yesterday</p>
+                    </div>
+                    <div class="bg-red-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Orders -->
+            <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.2s">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Pending Orders</p>
+                        <h3 class="text-2xl font-bold accent-red">0</h3>
+                        <p class="text-sm text-gray-400">0 processing</p>
+                    </div>
+                    <div class="bg-red-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Out of Stock -->
+            <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.3s">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Out of Stock</p>
+                        <h3 class="text-2xl font-bold accent-red">0</h3>
+                        <p class="text-sm text-gray-400">0 low stock</p>
+                    </div>
+                    <div class="bg-red-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Satisfaction -->
+            <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.4s">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Customer Satisfaction</p>
+                        <h3 class="text-2xl font-bold accent-red">99%</h3>
+                        <p class="text-sm text-gray-400">+56% this week</p>
+                    </div>
+                    <div class="bg-red-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders & Reviews -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Recent Orders -->
+            <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.5s">
+                <h3 class="text-xl font-semibold mb-4">Recent Orders</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                        <tr>
+                            <th class="text-left py-3 px-4">Order ID</th>
+                            <th class="text-left py-3 px-4">Customer</th>
+                            <th class="text-left py-3 px-4">Status</th>
+                            <th class="text-left py-3 px-4">Amount</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        <tr class="border-t">
+                            <td class="py-3 px-4">#4</td>
+                            <td class="py-3 px-4">Denizuh</td>
+                            <td class="py-3 px-4">
+                                    <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 completed">
+                                </span>
+                            </td>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

@@ -1,0 +1,16 @@
+.idea/
+*.iml
+*.py[co]
+__pycache__/
+*.egg-info/
+*.rej
+config.py
+.DS_Store
+.pytest_cache/
+logs/
+# Compiled output
+build/
+dist/
+# Compiled static files (if any)
+tmp/
+*.log

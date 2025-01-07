@@ -1,0 +1,163 @@
+<!-- templates/users/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <style>
+        /* Apple-inspired CSS */
+        :root {
+            --primary-color: #007AFF;
+            --background-color: #F5F5F7;
+            --text-color: #1D1D1F;
+            --border-radius: 10px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #D2D2D7;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #D2D2D7;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #86868B;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1 class="title">User Management</h1>
+        <button class="button" onclick="location.href='/users/new'">Add User</button>
+    </div>
+
+    <div class="card">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="userTable">
+            <!-- User data will be populated here via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Fetch and display users
+    async function fetchUsers() {
+        try {
+            const response = await fetch('/users/api/users');
+            const users = await response.json();
+            const tableBody = document.getElementById('userTable');
+
+            tableBody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.first_name} ${user.last_name}</td>
+                        <td>${user.email}</td>
+                        <td>${user.phone}</td>
+                        <td>${user.role}</td>
+                        <td>
+                            <button class="button" onclick="location.href='/users/${user.id}/edit'">Edit</button>
+                            <button class="button" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        }
+    }
+
+    // Delete user
+    async function deleteUser(userId) {
+        if (confirm('Are you sure you want to delete this user?')) {
+            try {
+                await fetch(`/users/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                fetchUsers();
+            } catch (error) {
+                console.error('Error deleting user:', error);
+            }
+        }
+    }
+
+    // Initial load
+    fetchUsers();
+</script>
+</body>
+</html>

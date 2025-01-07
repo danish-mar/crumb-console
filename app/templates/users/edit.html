@@ -1,0 +1,215 @@
+<!-- templates/users/edit.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit User</title>
+    <style>
+        /* Apple-inspired CSS */
+        :root {
+            --primary-color: #007AFF;
+            --background-color: #F5F5F7;
+            --text-color: #1D1D1F;
+            --border-radius: 10px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --error-color: #FF3B30;
+            --success-color: #34C759;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .button.secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            margin-top: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #86868B;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #D2D2D7;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1 class="title">Edit User</h1>
+    </div>
+
+    <div class="card">
+        <form id="editUserForm" onsubmit="updateUser(event)">
+            <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" name="first_name" class="input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="last_name" class="input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" name="phone" class="input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="input" placeholder="Leave blank to keep current password">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Default Location</label>
+                <input type="text" name="default_location" class="input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select name="role" class="input">
+                    <option value="customer">Customer</option>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                </select>
+            </div>
+
+            <button type="submit" class="button">Update User</button>
+            <button type="button" class="button secondary" onclick="location.href='/users'">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Populate form with user data
+    async function loadUserData() {
+        const userId = window.location.pathname.split('/')[2];
+        try {
+            const response = await fetch(`/users/api/users/${userId}`);
+            const user = await response.json();
+
+            const form = document.getElementById('editUserForm');
+            for (const [key, value] of Object.entries(user)) {
+                const input = form.elements[key];
+                if (input && key !== 'password') {
+                    input.value = value;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            alert('Failed to load user data');
+        }
+    }
+
+    // Update user
+    async function updateUser(event) {
+        event.preventDefault();
+        const userId = window.location.pathname.split('/')[2];
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Remove empty password if not changed
+        if (!data.password) {
+            delete data.password;
+        }
+
+        try {
+            const response = await fetch(`/users/api/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                window.location.href = '/users';
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to update user');
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    // Load user data when page loads
+    loadUserData();
+</script>
+</body>
+</html>
