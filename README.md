@@ -16,7 +16,7 @@ This repository holds the **Crumb Console**, a sleek and powerful dashboard to m
 
 1️⃣ **Clone this Repository:**  
 ```bash  
-git clone <repository_url>  
+git clone https://github.com/danish-mar/crumb-console  
 ```  
 
 2️⃣ **Hop into the Project Directory:**  
