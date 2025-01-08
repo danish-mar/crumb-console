@@ -18,10 +18,12 @@ class SessionManager:
         """Creates a new session for a user."""
         try:
             session_id = str(uuid.uuid4())
+            created_at = datetime.now(UTC)
             expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
             session = {
-                "session_id": session_id,
+                "sessionId": session_id,
                 "user_id": user_id,
+                'createdAt': created_at,
                 "expires_at": expires_at
             }
             self.sessions.insert_one(session)
@@ -34,7 +36,7 @@ class SessionManager:
     def get_session(self, session_id):
         """Fetches a session by its session ID."""
         try:
-            session = self.sessions.find_one({"session_id": session_id})
+            session = self.sessions.find_one({"sessionId": session_id})
             return session
         except PyMongoError as e:
             print(f"Error fetching session: {e}")

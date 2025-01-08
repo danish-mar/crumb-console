@@ -3,7 +3,7 @@ from flask import Flask, g
 from .config import config
 from .db import close_db, close_mongo_db, get_db  # Ensure `get_db` is defined properly
 
-def create_app(config_name='alpha'):
+def create_app(config_name='production'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
 
@@ -14,6 +14,8 @@ def create_app(config_name='alpha'):
     from .routes.routes import app as app_blueprint
     app.register_blueprint(app_blueprint)
 
+    from .routes.report import receipts_bp
+    app.register_blueprint(receipts_bp)
     # Initialize database connections after app context is available
     with app.app_context():
         # This ensures the database connection is created after the app is initialized

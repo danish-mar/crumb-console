@@ -13,13 +13,15 @@ class OrderManager:
         self.db.ping(reconnect=True)
         return self.db.cursor(dictionary=True)
 
+
     def get_order(self, order_id):
-        """Get complete order details, including product information."""
+        """Get complete order details, including customer and product information."""
+
         cursor = None
         try:
             cursor = self.get_cursor()
 
-            # Query to get order details
+            # Query to get order, customer, and product details
             query = """
             SELECT 
                 o.id AS order_id,
@@ -41,10 +43,15 @@ class OrderManager:
                 p.name AS product_name,
                 p.category AS product_category,
                 p.weight AS product_weight,
-                p.image_url AS product_image_url
+                p.image_url AS product_image_url,
+                u.first_name AS customer_first_name,
+                u.last_name AS customer_last_name,
+                u.phone AS customer_phone,
+                u.default_location AS customer_address
             FROM orders o
             LEFT JOIN order_details od ON o.id = od.order_id
             LEFT JOIN products p ON od.product_id = p.id
+            LEFT JOIN users u ON o.user_id = u.id
             WHERE o.id = %s
             """
 
@@ -68,6 +75,12 @@ class OrderManager:
                     'shipping_address': order['shipping_address'],
                     'status': order['status'],
                     'delivery_charges': order['delivery_charges'],
+                    'customer': {
+                        'first_name': order['customer_first_name'],
+                        'last_name': order['customer_last_name'],
+                        'phone': order['customer_phone'],
+                        'address': order['customer_address']
+                    },
                     'order_details': []
                 }
 
@@ -173,8 +186,6 @@ class OrderManager:
             if cursor:
                 cursor.close()
 
-
-
     def create_order(self, user_id, payment_method, shipping_address, delivery_charges, order_details):
         """
         Create a new order and its details.
@@ -205,7 +216,8 @@ class OrderManager:
             """
             for detail in order_details:
                 subtotal = detail['quantity'] * detail['price']
-                cursor.execute(query_details, (order_id, detail['product_id'], detail['quantity'], detail['price'], subtotal))
+                cursor.execute(query_details,
+                               (order_id, detail['product_id'], detail['quantity'], detail['price'], subtotal))
 
             self.db.commit()
             return order_id

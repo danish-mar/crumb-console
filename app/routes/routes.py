@@ -9,27 +9,40 @@ from app.db import get_mongo_db
 app = Blueprint('app', __name__)
 
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        print("Checking for session")
-        # Access the session manager with the app's config
-        session_manager = SessionManager(db_uri=current_app.config['MONGO_URI'],
-                                         db_name=current_app.config['MONGO_DATABASE'])
+def login_required(redirect_url='/dashboard',order_id=""):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            print("Checking for session")
 
-        # Retrieve the session ID from cookies
-        session_id = request.cookies.get('session_id')
+            # Access the session manager with the app's config
+            session_manager = SessionManager(
+                db_uri=current_app.config['MONGO_URI'],
+                db_name=current_app.config['MONGO_DATABASE']
+            )
 
-        # If no session ID, reject the session and redirect to login
-        if not session_id or not session_manager.validate_session(session_id):
-            print("Session Rejected")
-            return redirect(url_for('app.login'))
+            # Retrieve the session ID from cookies
+            session_id = request.cookies.get('session_id')
+            print(session_id)
 
-        # If session is valid, allow access to the route
-        print("Session Accepted")
-        return f(*args, **kwargs)
+            # If no session ID or session is invalid
+            if not session_id or not session_manager.validate_session(session_id):
+                print("Session Rejected")
+                # Handle GET requests with a redirect to login
+                if request.method == 'GET':
+                    if order_id:
+                        return redirect(url_for('app.login', isLoggedIn="false", redirect=f"/orders/{order_id}"))
+                    return redirect(url_for('app.login', isLoggedIn="false", redirect=redirect_url))
+                # Handle non-GET requests with an error response
+                return jsonify({"error": "Unauthorized access"}), 401
 
-    return decorated_function
+            # If session is valid, allow access to the route
+            print("Session Accepted")
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -60,7 +73,7 @@ def login():
 
 
 @app.route('/dashboard', methods=['GET'])
-@login_required
+@login_required(redirect_url='/dashboard')
 def dashboard():
     # List of sidebar items
     sidebar_items = [
@@ -75,12 +88,11 @@ def dashboard():
         {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
     ]
 
-
     return render_template('dashboard.html', sidebar_items=sidebar_items)
 
 
 @app.route('/orders', methods=['GET'])
-@login_required
+@login_required(redirect_url='/orders')
 def orders():
     # List of sidebar items
     sidebar_items = [
@@ -96,5 +108,3 @@ def orders():
     ]
 
     return render_template('orders.html', sidebar_items=sidebar_items)
-
-

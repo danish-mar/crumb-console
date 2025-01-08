@@ -119,6 +119,11 @@
 {% block scripts %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function viewOrder(orderId) {
+            const url = `http://localhost:5000/orders/${orderId}`;
+            window.open(url, '_blank'); // Opens the URL in a new tab
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const ordersTableBody = document.getElementById('orders-table-body');
             const searchInput = document.getElementById('search');
@@ -129,7 +134,7 @@
             // Fetch and render orders
             async function fetchOrders() {
                 try {
-                    const response = await fetch('/api/orders/all');
+                    const response = await fetch('/api/orders/all', { method:'POST' });
                     const data = await response.json();
                     orders = data.orders;
                     renderOrders(orders);
@@ -164,13 +169,14 @@
                         </td>
                         <td data-label="Payment" class="px-6 py-4">${order.payment_method}</td>
                         <td data-label="Total" class="px-6 py-4 font-medium">
-                            ₹${(order.total + order.delivery_charges).toFixed(2)}
+                            ₹${(order.total).toFixed(2)}
                         </td>
                         <td data-label="Actions" class="px-6 py-4">
                             <div class="flex gap-2">
-                                <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="View">
+                                <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="View" onclick="viewOrder(${order.order_id})">
                                     <i class="fas fa-eye"></i>
                                 </button>
+
                                 <button class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -193,6 +199,9 @@
                     filterOrders();
                 });
             });
+
+
+
 
             function filterOrders() {
                 const searchTerm = searchInput.value.toLowerCase();

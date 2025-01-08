@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details - CrumbConsole{% endblock %}
+
+{% block styles %}
+    <style>
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-completed {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-cancelled {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .loading-skeleton {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            border-radius: 4px;
+            height: 1em;
+            display: inline-block;
+        }
+
+        .skeleton-text {
+            width: 200px;
+            height: 1em;
+        }
+
+        .skeleton-table-row {
+            height: 2.5rem;
+        }
+
+        @keyframes pulse {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .accent-gradient {
+            background: linear-gradient(135deg, #ff4b4b 0%, #e01414 100%);
+        }
+
+        .action-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .primary-button {
+            background: linear-gradient(135deg, #ff4b4b 0%, #e01414 100%);
+            color: white;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(224, 20, 20, 0.3);
+        }
+
+        .secondary-button {
+            background: white;
+            border: 2px solid #e01414;
+            color: #e01414;
+        }
+
+        .secondary-button:hover {
+            background: #fff5f5;
+            transform: translateY(-2px);
+        }
+
+        .order-card {
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <div class="glass-effect rounded-xl p-8 order-card">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Order #<span id="order-id" class="loading-skeleton skeleton-text"></span></h1>
+        </div>
+
+        <div class="flex gap-4">
+            <button id="download-receipt" class="action-button secondary-button" disabled>
+                <i class="fas fa-download"></i>
+                Download Receipt
+            </button>
+            <button id="dispatch-order" class="action-button primary-button" disabled>
+                <i class="fas fa-truck"></i>
+                Dispatch Order
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold mb-4">Customer Details</h2>
+                <div class="space-y-3">
+                    <p><strong>Name:</strong> <span id="customer-name" class="loading-skeleton skeleton-text"></span></p>
+                    <p><strong>Phone:</strong> <span id="customer-phone" class="loading-skeleton skeleton-text"></span></p>
+                    <p><strong>Shipping Address:</strong> <span id="shipping-address" class="loading-skeleton skeleton-text"></span></p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold mb-4">Order Details</h2>
+                <div class="space-y-3">
+                    <p><strong>Status:</strong> <span id="order-status" class="loading-skeleton skeleton-text"></span></p>
+                    <p><strong>Order Placed:</strong> <span id="order-date" class="loading-skeleton skeleton-text"></span></p>
+                    <p><strong>Expected Delivery:</strong> <span id="expected-delivery" class="loading-skeleton skeleton-text"></span></p>
+                    <p><strong>Actual Delivery:</strong> <span id="actual-delivery" class="loading-skeleton skeleton-text"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 overflow-x-auto">
+            <h2 class="text-xl font-semibold mb-4">Items</h2>
+            <div class="bg-white rounded-lg shadow-sm overflow-x-auto">
+                <table class="table-auto w-full">
+                    <thead class="accent-gradient text-white">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Product</th>
+                        <th class="px-6 py-3 text-center">Quantity</th>
+                        <th class="px-6 py-3 text-right">Price</th>
+                        <th class="px-6 py-3 text-right">Subtotal</th>
+                    </tr>
+                    </thead>
+                    <tbody id="order-items">
+                    <tr class="loading-skeleton skeleton-table-row">
+                        <td colspan="4"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-white p-6 rounded-lg shadow-sm">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-600"><strong>Delivery Charges:</strong> <span id="delivery-charges" class="loading-skeleton skeleton-text"></span></p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold"><strong>Total:</strong> <span id="order-total" class="loading-skeleton skeleton-text"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const orderId = window.location.pathname.split('/').pop();
+
+            // Enable buttons once data is loaded
+            const downloadBtn = document.getElementById('download-receipt');
+            const dispatchBtn = document.getElementById('dispatch-order');
+
+            try {
+                const response = await fetch(`/api/orders/${orderId}`,{method: 'POST'});
+                const order = await response.json();
+
+                // Remove loading skeletons and populate data
+                document.querySelectorAll('.loading-skeleton').forEach(skeleton => {
+                    skeleton.classList.remove('loading-skeleton', 'skeleton-text', 'skeleton-table-row');
+                });
+
+                document.getElementById('order-id').textContent = order.id;
+                document.getElementById('customer-name').textContent = `${order.customer.first_name} ${order.customer.last_name}`;
+                document.getElementById('customer-phone').textContent = order.customer.phone;
+                document.getElementById('shipping-address').textContent = order.shipping_address || 'N/A';
+
+                const statusBadge = document.getElementById('order-status');
+                statusBadge.textContent = order.status;
+                statusBadge.innerHTML = `
+                    <i class="fas fa-circle"></i>
+                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                `;
+                if (order.status === 'pending') statusBadge.classList.add('status-pending');
+                if (order.status === 'completed') statusBadge.classList.add('status-completed');
+                if (order.status === 'cancelled') statusBadge.classList.add('status-cancelled');
+
+                document.getElementById('order-date').textContent = new Date(order.order_place_date).toLocaleString();
+                document.getElementById('expected-delivery').textContent = new Date(order.expected_delivery_date).toLocaleString();
+                document.getElementById('actual-delivery').textContent = order.actual_delivery_date ? new Date(order.actual_delivery_date).toLocaleString() : 'N/A';
+
+                const itemsTable = document.getElementById('order-items');
+                itemsTable.innerHTML = ''; // Clear loading skeleton
+                order.order_details.forEach(detail => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-t hover:bg-gray-50 transition-colors';
+                    row.innerHTML = `
+                        <td class="px-6 py-4">${detail.product.name}</td>
+                        <td class="px-6 py-4 text-center">${detail.quantity}</td>
+                        <td class="px-6 py-4 text-right">₹${detail.price.toLocaleString()}</td>
+                        <td class="px-6 py-4 text-right">₹${detail.subtotal.toLocaleString()}</td>
+                    `;
+                    itemsTable.appendChild(row);
+                });
+
+                document.getElementById('delivery-charges').textContent = `₹${order.delivery_charges.toLocaleString()}`;
+                document.getElementById('order-total').textContent = `₹${order.total.toLocaleString()}`;
+
+                // Enable buttons and add event listeners
+                downloadBtn.disabled = false;
+                dispatchBtn.disabled = order.status !== 'pending';
+
+                downloadBtn.addEventListener('click', () => generateReceipt(order.id));
+                dispatchBtn.addEventListener('click', () => dispatchOrder(orderId));
+
+            } catch (error) {
+                console.error('Error loading order:', error);
+                // Show error message to user
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded';
+                errorMessage.textContent = 'Failed to load order details. Please try again later.';
+                document.querySelector('.glass-effect').prepend(errorMessage);
+            }
+        });
+
+        async function generateReceipt(order) {
+
+                // Make the API call to generate and download the receipt
+                fetch(`/generate-receipt/${order}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to generate receipt');
+                        }
+                        // Create a temporary link to download the file
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const link = document.createElement('a');
+                        const url = window.URL.createObjectURL(blob);
+                        link.href = url;
+                        link.download = `receipt_${order}.pdf`;  // You can change this to the dynamic filename if needed
+                        link.click();
+                        window.URL.revokeObjectURL(url);  // Clean up the URL object
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error while downloading the receipt.');
+                    })
+                    .finally(() => {
+                        // Re-enable the button
+                        document.getElementById('download-receipt').disabled = false;
+                    });
+        }
+
+        async function dispatchOrder(orderId) {
+            try {
+                const response = await fetch(`/api/orders/${orderId}/dispatch`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    // Disable dispatch button and update status
+                    document.getElementById('dispatch-order').disabled = true;
+                    const statusBadge = document.getElementById('order-status');
+                    statusBadge.className = 'status-badge status-completed';
+                    statusBadge.innerHTML = '<i class="fas fa-circle"></i> Dispatched';
+
+                    // Show success message
+                    alert('Order successfully dispatched!');
+                } else {
+                    throw new Error('Failed to dispatch order');
+                }
+            } catch (error) {
+                console.error('Error dispatching order:', error);
+                alert('Failed to dispatch order. Please try again.');
+            }
+        }
+    </script>
+{% endblock %}

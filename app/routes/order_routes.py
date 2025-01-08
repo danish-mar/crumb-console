@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, render_template
 from app.order_management.order_manager import OrderManager
 from app.routes.routes import login_required
 
@@ -16,8 +16,8 @@ def init_order_manager(db_connection):
         order_manager = OrderManager(db_connection)
 
 
-@order_blueprint.route('/api/orders/<int:order_id>', methods=['GET'])
-@login_required
+@order_blueprint.route('/api/orders/<int:order_id>', methods=['POST'])
+@login_required()
 def get_order(order_id):
     """Get details of a specific order."""
     try:
@@ -32,7 +32,7 @@ def get_order(order_id):
 
 
 @order_blueprint.route('/api/orders', methods=['POST'])
-@login_required
+@login_required()
 def create_order():
     """Create a new order."""
     try:
@@ -57,7 +57,7 @@ def create_order():
 
 
 @order_blueprint.route('/api/orders/<int:order_id>', methods=['PUT'])
-@login_required
+@login_required()
 def update_order_status(order_id):
     """Update the status of an order."""
     try:
@@ -77,9 +77,10 @@ def update_order_status(order_id):
 
 
 @order_blueprint.route('/api/orders/<int:order_id>', methods=['DELETE'])
-@login_required
+@login_required()
 def delete_order(order_id):
     """Delete an order."""
+    print("Deleting order ??")
     try:
         if not order_manager:
             return jsonify({"error": "OrderManager not initialized"}), 500
@@ -89,11 +90,29 @@ def delete_order(order_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@order_blueprint.route('/api/orders/all', methods=['GET'])
-@login_required
+
+@order_blueprint.route('/api/orders/all', methods=['POST'])
+@login_required()
 def get_all_orders():
     try:
         orders = order_manager.get_all_orders()
         return jsonify({"orders": orders}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@order_blueprint.route('/orders/<int:order_id>', methods=['GET'])
+@login_required(redirect_url='/order')
+def view_order(order_id):
+    sidebar_items = [
+        {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
+        {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': 'active'},
+        {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': '', 'submenu': [
+            {'name': 'Category', 'url': '/products/add', 'icon': 'fas fa-plus', 'active': ''},
+            {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
+        ]},
+        {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
+        {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
+        {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
+    ]
+    return render_template('view_order.html', sidebar_items=sidebar_items, order_id=order_id)
