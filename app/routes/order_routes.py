@@ -115,4 +115,4 @@ def view_order(order_id):
         {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
         {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
     ]
-    return render_template('view_order.html', sidebar_items=sidebar_items, order_id=order_id)
+    return render_template('order/view_order.html', sidebar_items=sidebar_items, order_id=order_id)

@@ -107,4 +107,4 @@ def orders():
         {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
     ]
 
-    return render_template('orders.html', sidebar_items=sidebar_items)
+    return render_template('order/orders.html', sidebar_items=sidebar_items)

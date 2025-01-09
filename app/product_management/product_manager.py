@@ -6,6 +6,7 @@ import mysql.connector
 class ProductManager:
     def __init__(self, db_connection):
         """Initialize ProductManager with a database connection."""
+        print("Initializing Product Manager")
         self.db = db_connection
 
     def get_cursor(self):
@@ -13,16 +14,16 @@ class ProductManager:
         self.db.ping(reconnect=True)
         return self.db.cursor(dictionary=True)
 
-    def add_product(self, name, category_name, price, stock, description):
+    def add_product(self, name, category_id, price, stock, description, image_url="Wil.jpg"):
         """Add a new product to the database."""
         cursor = None
         try:
             cursor = self.get_cursor()
             query = """
-            INSERT INTO products (name, category, price, stock_quantity, description, created_at, is_available, weight)
-            VALUES (%s, (SELECT id FROM product_category WHERE name = %s LIMIT 1), %s, %s, %s, NOW(), TRUE, 0.0)
+            INSERT INTO products (name, category, price, stock_quantity, description, created_at, is_available, weight,image_url)
+            VALUES (%s, %s, %s, %s, %s, NOW(), TRUE, 0.0,%s)
             """
-            cursor.execute(query, (name, category_name, price, stock, description))
+            cursor.execute(query, (name, category_id, price, stock, description,image_url))
             self.db.commit()
             return cursor.lastrowid
         except mysql.connector.Error as err:
