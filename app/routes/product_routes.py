@@ -37,8 +37,13 @@ def save_image(image):
 @login_required()
 def fetch_all_products():
     try:
+
         cursor = product_manager.get_cursor()
+
         cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
+        cursor.execute("SELECT COUNT(*) as count FROM orders")
+        count = cursor.fetchone()
+        print(f"Total orders in database: {count['count']}")
         query = """
             SELECT p.*, c.name as category_name
             FROM products p
@@ -59,6 +64,8 @@ def fetch_all_products():
 @login_required()
 def create_product():
     try:
+        #   def add_product(self, name, category_id, price, stock, description, weight_in_g, tags, image_url="Wil.jpg"):
+
         data = request.form
         print(data)
         image = request.files.get('image')
@@ -79,6 +86,9 @@ def create_product():
             price=float(data['price']),
             stock=int(data['stock']),
             description=data['description'],
+            is_available=data['is_available'],
+            weight_in_g=int(data['weight']),
+            tags=data['tags'],
             image_url=image_path
         )
 
@@ -94,40 +104,53 @@ def create_product():
 @login_required()
 def update_product(product_id):
     try:
+        # Get form data
         data = request.form
         image = request.files.get('image')
 
         print("Update requested")
         print(data)
 
+        # Handle image file
+        if image:
+            image_url = save_image(image)
+        else:
+            image_url = data.get('image_url')
+            print("No image provided, using existing image:", image_url)
+
+
+
+        # Prepare the update data
         update_data = {
             "name": data.get('name'),
             "category": data.get('category'),
             "price": float(data.get('price')) if data.get('price') else None,
-            "stock_quantity": int(data.get('stock_quantity')) if data.get('stock_quantity') else None,
+            "stock_quantity": int(data.get('stock')) if data.get('stock') else None,
             "description": data.get('description'),
-            "is_available": data.get('is_available')
+            "is_available": data.get('is_available'),
+            "weight": float(data.get('weight')) if data.get('weight') else None,  # Add weight
+            "tags": data.get('tags'),  # Add tags (comma-separated string)
+            "image_url": image_url
         }
 
         print("\n")
         print("Update Data : ")
+        print(f"Updating product {product_id} with data: {update_data}")
         print(update_data)
 
-        if image:
-            update_data['image_url'] = save_image(image)
-        else:
-            update_data['image_url'] = "product_image.png"
 
-        print(f"Updating product {product_id} with data: {update_data}")
 
+        # Call the product manager to update the product
         success = product_manager.update_product(product_id, **update_data)
         if not success:
             return jsonify({"error": "Product not found"}), 404
 
         return jsonify({"message": "Product updated successfully"}), 200
+
     except Exception as e:
         print(f"Error updating product {product_id}: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 
 @product_blueprint.route('/api/products/delete/<int:product_id>', methods=['DELETE'])

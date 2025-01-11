@@ -14,16 +14,16 @@ class ProductManager:
         self.db.ping(reconnect=True)
         return self.db.cursor(dictionary=True)
 
-    def add_product(self, name, category_id, price, stock, description, image_url="Wil.jpg"):
+    def add_product(self, name, category_id, price, stock, description, is_available, weight_in_g, tags, image_url="Wil.jpg"):
         """Add a new product to the database."""
         cursor = None
         try:
             cursor = self.get_cursor()
             query = """
-            INSERT INTO products (name, category, price, stock_quantity, description, created_at, is_available, weight,image_url)
-            VALUES (%s, %s, %s, %s, %s, NOW(), TRUE, 0.0,%s)
+            INSERT INTO products (name, category, price, stock_quantity, description, created_at, is_available, weight, image_url, tags)
+            VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
             """
-            cursor.execute(query, (name, category_id, price, stock, description,image_url))
+            cursor.execute(query, (name, category_id, price, stock, description, is_available, weight_in_g, image_url, tags))
             self.db.commit()
             return cursor.lastrowid
         except mysql.connector.Error as err:
@@ -64,16 +64,36 @@ class ProductManager:
         cursor = None
         try:
             cursor = self.get_cursor()
+
+            # Check if the product exists in order_details or review table
+            check_query = """
+            SELECT EXISTS(SELECT 1 FROM order_details WHERE product_id = %s) AS in_orders,
+                   EXISTS(SELECT 1 FROM review WHERE product = %s) AS in_reviews
+            """
+            cursor.execute(check_query, (product_id, product_id))
+            result = cursor.fetchone()
+
+            # If the product exists in either order_details or review, raise an exception
+            if result['in_orders'] or result['in_reviews']:
+                print("Cannot delete product as it exists in order details or reviews.")
+                raise Exception("Cannot delete product as it exists in order details or reviews.")
+
+            # Attempt to delete the product from the products table
             query = "DELETE FROM products WHERE id = %s"
             cursor.execute(query, (product_id,))
             self.db.commit()
+
+            # Return True if the deletion was successful, otherwise False
             return cursor.rowcount > 0
         except Exception as e:
+            # Rollback the transaction in case of any errors
             self.db.rollback()
-            raise Exception(f"Error deleting product: {e}")
+            raise Exception(f"{e}")
         finally:
+            # Ensure the cursor is always closed
             if cursor:
                 cursor.close()
+
 
     def get_product(self, product_id):
         """Get a product by ID."""
