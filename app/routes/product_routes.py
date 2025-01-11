@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 import os
+from app.routes.routes import login_required
 
 from app.product_management.product_manager import ProductManager
 
@@ -10,12 +11,14 @@ product_blueprint = Blueprint('product_blueprint', __name__)
 # Singleton instance for ProductManager
 product_manager = None
 
+
 def init_product_manager(db_connection):
     """Initialize the ProductManager singleton."""
     global product_manager
     print("Product Manager : Initializing Routes ")
     if not product_manager:
         product_manager = ProductManager(db_connection)
+
 
 # Helper to get the absolute path for saving images
 def save_image(image):
@@ -27,12 +30,15 @@ def save_image(image):
     image.save(filepath)
     return f"/static/images/products/{filename}"
 
+
 # Routes
 
-@product_blueprint.route('/api/products/all', methods=['POST','GET'])
+@product_blueprint.route('/api/products/all', methods=['POST', 'GET'])
+@login_required()
 def fetch_all_products():
     try:
         cursor = product_manager.get_cursor()
+        cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
         query = """
             SELECT p.*, c.name as category_name
             FROM products p
@@ -48,7 +54,9 @@ def fetch_all_products():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @product_blueprint.route('/api/products/create', methods=['POST'])
+@login_required()
 def create_product():
     try:
         data = request.form
@@ -74,7 +82,6 @@ def create_product():
             image_url=image_path
         )
 
-
         # Update the product with the image path
         # product_manager.update_product(product_id, image_url=image_path)
 
@@ -82,12 +89,13 @@ def create_product():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @product_blueprint.route('/api/products/update/<int:product_id>', methods=['PUT'])
+@login_required()
 def update_product(product_id):
     try:
         data = request.form
         image = request.files.get('image')
-
 
         print("Update requested")
         print(data)
@@ -121,7 +129,9 @@ def update_product(product_id):
         print(f"Error updating product {product_id}: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @product_blueprint.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+@login_required()
 def delete_product(product_id):
     try:
         print(f"deleting product_id {product_id}")
@@ -134,14 +144,28 @@ def delete_product(product_id):
         return jsonify({"error": str(e)}), 500
 
 
-@product_blueprint.route('/products/manage', methods=['POST','GET'])
+@product_blueprint.route('/products/manage', methods=['POST', 'GET'])
+@login_required(redirect_url="/products/manage")
 def manage_product_page():
     try:
-        return render_template('product/manage_products.html')
+        sidebar_items = [
+            {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
+            {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
+            {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': 'active', 'submenu': [
+                {'name': 'Category', 'url': '/products/add', 'icon': 'fas fa-plus', 'active': ''},
+                {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': 'active'},
+            ]},
+            {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
+            {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
+            {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
+        ]
+        return render_template('product/manage_products.html',sidebar_items=sidebar_items)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @product_blueprint.route('/api/categories', methods=['GET'])
+@login_required()
 def get_categories():
     """Get all categories with their ID and name."""
     try:
@@ -150,4 +174,5 @@ def get_categories():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-4
+
+

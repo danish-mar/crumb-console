@@ -13,7 +13,6 @@ class OrderManager:
         self.db.ping(reconnect=True)
         return self.db.cursor(dictionary=True)
 
-
     def get_order(self, order_id):
         """Get complete order details, including customer and product information."""
 
@@ -117,7 +116,18 @@ class OrderManager:
         """Get all orders along with customer details."""
         cursor = None
         try:
+            self.db.ping(reconnect=True)
             cursor = self.get_cursor()
+            # # Diagnostic queries
+            # cursor.execute("SELECT @@session.transaction_isolation")
+            # isolation = cursor.fetchone()
+            # print(f"Transaction isolation level: {isolation}")
+            # Set isolation level to READ COMMITTED for this session
+            cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
+
+            cursor.execute("SELECT COUNT(*) as count FROM orders")
+            count = cursor.fetchone()
+            print(f"Total orders in database: {count['count']}")
 
             query = """
                 SELECT 
@@ -141,8 +151,15 @@ class OrderManager:
                 JOIN payment_methods p ON o.payment_method = p.id;
             """
 
+            # Clear any existing cursor state
+            cursor.execute("SELECT 1")  # Dummy query to clear any existing state
+            cursor.fetchall()
+
+            # Execute main query
             cursor.execute(query)
             orders = cursor.fetchall()
+            print(f"Number of orders fetched: {len(orders)}")
+
             print(orders)
 
             def format_datetime(dt):
