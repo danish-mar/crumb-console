@@ -162,3 +162,26 @@ class ProductManager:
         finally:
             if cursor:
                 cursor.close()
+
+    def update_category(self, category_id, **kwargs):
+        """Update category attributes."""
+        cursor = None
+        try:
+            cursor = self.get_cursor()
+            # Filter out None values
+            kwargs = {k: v for k, v in kwargs.items() if v is not None}
+            if not kwargs:
+                return False
+
+            set_clause = ", ".join([f"{key} = %s" for key in kwargs.keys()])
+            query = f"UPDATE product_category SET {set_clause} WHERE id = %s"
+            values = (*kwargs.values(), category_id)
+            cursor.execute(query, values)
+            self.db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            self.db.rollback()
+            raise Exception(f"Error updating category: {e}")
+        finally:
+            if cursor:
+                cursor.close()

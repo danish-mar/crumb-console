@@ -108,7 +108,7 @@ def view_order(order_id):
         {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
         {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': 'active'},
         {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': '', 'submenu': [
-            {'name': 'Category', 'url': '/products/add', 'icon': 'fas fa-plus', 'active': ''},
+            {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
             {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
         ]},
         {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},

@@ -118,8 +118,6 @@ def update_product(product_id):
             image_url = data.get('image_url')
             print("No image provided, using existing image:", image_url)
 
-
-
         # Prepare the update data
         update_data = {
             "name": data.get('name'),
@@ -138,8 +136,6 @@ def update_product(product_id):
         print(f"Updating product {product_id} with data: {update_data}")
         print(update_data)
 
-
-
         # Call the product manager to update the product
         success = product_manager.update_product(product_id, **update_data)
         if not success:
@@ -150,7 +146,6 @@ def update_product(product_id):
     except Exception as e:
         print(f"Error updating product {product_id}: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 
 @product_blueprint.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
@@ -175,14 +170,14 @@ def manage_product_page():
             {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
             {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
             {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': 'active', 'submenu': [
-                {'name': 'Category', 'url': '/products/add', 'icon': 'fas fa-plus', 'active': ''},
+                {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
                 {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': 'active'},
             ]},
             {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
             {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
             {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
         ]
-        return render_template('product/manage_products.html',sidebar_items=sidebar_items)
+        return render_template('product/manage_products.html', sidebar_items=sidebar_items)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -198,4 +193,100 @@ def get_categories():
         return jsonify({"error": str(e)}), 500
 
 
+## category maanagement routes :
+@product_blueprint.route('/api/categories/add', methods=['POST'])
+@login_required()
+def add_category():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        description = data.get('description')
+
+        if not name:
+            return jsonify({"error": "Category name is required"}), 400
+
+        category_id = product_manager.add_category(name, description)
+        return jsonify({"message": "Category added successfully", "category_id": category_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@product_blueprint.route('/api/categories/delete/<int:category_id>', methods=['DELETE'])
+@login_required()
+def remove_category(category_id):
+    try:
+        success = product_manager.remove_category(category_id)
+        if not success:
+            return jsonify({"error": "Category not found"}), 404
+        return jsonify({"message": "Category removed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@product_blueprint.route('/api/categories/<int:category_id>', methods=['GET'])
+@login_required()
+def get_category(category_id):
+    try:
+        category = product_manager.get_category(category_id)
+        if not category:
+            return jsonify({"error": "Category not found"}), 404
+        return jsonify({"category": category}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@product_blueprint.route('/api/categories/update/<int:category_id>', methods=['PUT'])
+@login_required()
+def update_category(category_id):
+    try:
+        # Get form data
+        data = request.form
+
+        print("Update category requested")
+        print(data)
+
+        # Prepare the update data
+        update_data = {
+            "name": data.get('name'),
+            "description": data.get('description'),
+        }
+
+        # Filter out None values (optional: if the update_category method already does this)
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+
+        print("\n")
+        print("Update Data:")
+        print(f"Updating category {category_id} with data: {update_data}")
+
+        # Call the category manager to update the category
+        success = product_manager.update_category(category_id, **update_data)
+        if not success:
+            return jsonify({"error": "Category not found or no changes made"}), 404
+
+        return jsonify({"message": "Category updated successfully"}), 200
+
+    except Exception as e:
+        print(f"Error updating category {category_id}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@product_blueprint.route('/categories/manage', methods=['GET'])
+@login_required(redirect_url="/categories/manage")
+def manage_catetgory_template():
+    try:
+        sidebar_items = [
+            {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
+            {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
+            {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': 'active', 'submenu': [
+                {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': 'active'},
+                {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
+            ]},
+            {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
+            {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
+            {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
+        ]
+        return render_template('product/manage_categories.html',sidebar_items=sidebar_items)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
