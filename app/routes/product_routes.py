@@ -47,7 +47,8 @@ def fetch_all_products():
         query = """
             SELECT p.*, c.name as category_name
             FROM products p
-            RIGHT JOIN product_category c ON p.category = c.id
+                     RIGHT JOIN product_category c ON p.category = c.id
+            WHERE p.id IS NOT NULL AND p.name IS NOT NULL
         """
         cursor.execute(query)
         products = cursor.fetchall()
