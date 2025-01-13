@@ -11,8 +11,8 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500">Today's Revenue</p>
-                        <h3 class="text-2xl font-bold accent-red">$125.6</h3>
-                        <p class="text-sm text-gray-400">52 from yesterday</p>
+                        <h3 class="text-2xl font-bold accent-red">₹{{ overview.revenue.today }}</h3>
+                        <p class="text-sm text-gray-400">{{ '%.2f' % overview.revenue.change }} from yesterday</p>
                     </div>
                     <div class="bg-red-100 rounded-full p-3">
                         <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,13 +22,13 @@
                 </div>
             </div>
 
-            <!-- Current Orders -->
+            <!-- Pending Orders -->
             <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.2s">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500">Pending Orders</p>
-                        <h3 class="text-2xl font-bold accent-red">0</h3>
-                        <p class="text-sm text-gray-400">0 processing</p>
+                        <h3 class="text-2xl font-bold accent-red">{{ overview.pending_orders }}</h3>
+                        <p class="text-sm text-gray-400">{{ overview.pending_orders }} processing</p>
                     </div>
                     <div class="bg-red-100 rounded-full p-3">
                         <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,8 +43,8 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500">Out of Stock</p>
-                        <h3 class="text-2xl font-bold accent-red">0</h3>
-                        <p class="text-sm text-gray-400">0 low stock</p>
+                        <h3 class="text-2xl font-bold accent-red">{{ overview.stock.out_of_stock }}</h3>
+                        <p class="text-sm text-gray-400">{{ overview.stock.low_stock }} low stock</p>
                     </div>
                     <div class="bg-red-100 rounded-full p-3">
                         <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,8 +59,8 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-gray-500">Customer Satisfaction</p>
-                        <h3 class="text-2xl font-bold accent-red">99%</h3>
-                        <p class="text-sm text-gray-400">+56% this week</p>
+                        <h3 class="text-2xl font-bold accent-red">{{ overview.customer_satisfaction.percentage }}%</h3>
+                        <p class="text-sm text-gray-400">{{ overview.customer_satisfaction.total_reviews }} reviews</p>
                     </div>
                     <div class="bg-red-100 rounded-full p-3">
                         <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@
             </div>
         </div>
 
-        <!-- Recent Orders & Reviews -->
+        <!-- Recent Orders -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Recent Orders -->
             <div class="glass-card p-6 animate-fade-in" style="animation-delay: 0.5s">
@@ -87,21 +87,22 @@
                         </tr>
                         </thead>
                         <tbody>
-
-                        <tr class="border-t">
-                            <td class="py-3 px-4">#4</td>
-                            <td class="py-3 px-4">Denizuh</td>
-                            <td class="py-3 px-4">
-                                    <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 completed">
-                                </span>
-                            </td>
-
-                        </tr>
+                        {% for order in recent_orders %}
+                            <tr class="border-t">
+                                <td class="py-3 px-4">#{{ order.order_id }}</td>
+                                <td class="py-3 px-4">{{ order.customer }}</td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 {{ order.status|lower }}">
+                                        {{ order.status|capitalize }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">₹{{ order.amount }}</td>
+                            </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-
         </div>
     </main>
 {% endblock %}

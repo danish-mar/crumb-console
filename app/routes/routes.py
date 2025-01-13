@@ -72,23 +72,23 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/dashboard', methods=['GET'])
-@login_required(redirect_url='/dashboard')
-def dashboard():
-    # List of sidebar items
-    sidebar_items = [
-        {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': 'active'},
-        {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
-        {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': '', 'submenu': [
-            {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
-            {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
-        ]},
-        {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
-        {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
-        {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
-    ]
-
-    return render_template('dashboard.html', sidebar_items=sidebar_items)
+# @app.route('/dashboard', methods=['GET'])
+# @login_required(redirect_url='/dashboard')
+# def dashboard():
+#     # List of sidebar items
+#     sidebar_items = [
+#         {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': 'active'},
+#         {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
+#         {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': '', 'submenu': [
+#             {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
+#             {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
+#         ]},
+#         {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
+#         {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
+#         {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
+#     ]
+#
+#     return render_template('dashboard.html', sidebar_items=sidebar_items)
 
 
 @app.route('/orders', methods=['GET'])
