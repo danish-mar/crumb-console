@@ -10,10 +10,12 @@ dashboard_controller = None
 
 
 def init_dashboard_controller(db_connection):
-    """Initialize the OrderManager singleton."""
+    """Initialize the dashboard controller singleton."""
     global dashboard_controller
+    print("Dashboard : Initializing Routes ")
     if not dashboard_controller:
         dashboard_controller = DashboardController(db_connection)
+
 
 @dash_routes.route('/dashboard')
 @login_required()
@@ -23,7 +25,6 @@ def dashboard():
     recent_orders = dashboard_controller.get_recent_orders()
 
     sidebar_items = get_sidebar_items('admin')
-
 
     return render_template('dashboard.html',
                            overview=overview_data,

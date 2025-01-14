@@ -13,6 +13,7 @@ order_manager = None
 def init_order_manager(db_connection):
     """Initialize the OrderManager singleton."""
     global order_manager
+    print("Order Manager : Initializing Routes ")
     if not order_manager:
         order_manager = OrderManager(db_connection)
 

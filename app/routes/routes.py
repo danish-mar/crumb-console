@@ -4,7 +4,7 @@ import mysql.connector
 
 from app.auth.SessionManager import SessionManager
 from app.auth.sidebar import get_sidebar_items
-from app.customer_management.customer_manager import UserManager
+from app.customer_management.user_manager import UserManager
 from app.db import get_mongo_db
 
 app = Blueprint('app', __name__)
@@ -62,7 +62,7 @@ def login():
                                              db_name=current_app.config['MONGO_DATABASE'])
             session_id = session_manager.create_session(user['_id'], expires_in_hours=24)
             if session_id is not None:
-                response = redirect(url_for('app.dashboard'))
+                response = redirect(url_for('dash_routes.dashboard'))
                 response.set_cookie('session_id', session_id)
                 return response
             else:

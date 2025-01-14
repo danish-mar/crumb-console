@@ -1,85 +1,95 @@
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-from app.utils.hash_utils import hash_password
+import mysql.connector
+
+from app.utils.hash_utils import hash_password, calculate_hash
 
 
-class UserManager:
+class CustomerManager:
     def __init__(self, db_connection):
-        """
-        Initialize UserManager with a MongoDB connection.
-        :param db_connection: A MongoDB client connection.
-        """
         self.db = db_connection
-        self.collection = self.db['users']  # Replace 'users' with your MongoDB collection name
+        self.cursor = self.db.cursor()
 
-    def create_user(self, first_name, last_name, email, phone, password, default_location, role="customer", auth_provider="manual"):
-        """
-        Create a new user.
-        """
-        try:
-            hashed_password = hash_password(password)  # Hash the password
-            user = {
-                "first_name": first_name,
-                "last_name": last_name,
-                "email": email,
-                "phone": phone,
-                "password": hashed_password,
-                "default_location": default_location,
-                "role": role,
-                "auth_provider": auth_provider
-            }
-            result = self.collection.insert_one(user)
-            return str(result.inserted_id)
-        except Exception as e:
-            raise Exception(f"Error creating user: {e}")
+    # Create a new customer
+    def create_customer(self, first_name, last_name, email, phone, password, default_location, role='customer',
+                        status='active', auth_provider='manual', profile_pic_url='none', address_lat=None,
+                        address_lon=None):
+        hashed_password = hash_password(password)
 
-    def get_user_by_id(self, user_id):
+        query = """
+            INSERT INTO users (first_name, last_name, email, phone, password, default_location, role, status, auth_provider, profile_pic_url, address_lat, address_lon)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        Retrieve user information by user ID.
-        """
+        values = (first_name, last_name, email, phone, hashed_password, default_location, role, status, auth_provider,
+                  profile_pic_url, address_lat, address_lon)
         try:
-            user = self.collection.find_one({"_id": ObjectId(user_id)})
-            if user:
-                user["_id"] = str(user["_id"])  # Convert ObjectId to string
-            return user
-        except Exception as e:
-            raise Exception(f"Error fetching user by ID: {e}")
+            self.cursor.execute(query, values)
+            self.db.commit()
+            return self.cursor.lastrowid  # Return the ID of the newly created customer
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            return None
 
-    def get_user_by_email(self, email):
-        """
-        Retrieve user information by email.
-        """
-        try:
-            user = self.collection.find_one({"email": email})
-            if user:
-                user["_id"] = str(user["_id"])  # Convert ObjectId to string
-            return user
-        except Exception as e:
-            raise Exception(f"Error fetching user by email: {e}")
+    # Get customer by ID
+    def get_customer_by_id(self, customer_id):
+        query = "SELECT * FROM users WHERE id = %s"
+        self.cursor.execute(query, (customer_id,))
+        result = self.cursor.fetchone()
+        if result:
+            return result  # Return customer details as a tuple
+        return None
 
-    def update_user(self, user_id, **kwargs):
-        """
-        Update user details.
-        """
-        try:
-            if 'password' in kwargs:
-                kwargs['password'] = hash_password(kwargs['password'])  # Hash the password if it's being updated
-            update_query = {"$set": kwargs}
-            result = self.collection.update_one({"_id": ObjectId(user_id)}, update_query)
-            if result.matched_count == 0:
-                raise Exception("No user found to update.")
-            return result.modified_count
-        except Exception as e:
-            raise Exception(f"Error updating user: {e}")
+    # Get customer by email
+    def get_customer_by_email(self, email):
+        query = "SELECT * FROM users WHERE email = %s"
+        self.cursor.execute(query, (email,))
+        result = self.cursor.fetchone()
+        if result:
+            return result  # Return customer details as a tuple
+        return None
 
-    def delete_user(self, user_id):
-        """
-        Delete a user.
-        """
+    def update_customer(self, customer_id, **kwargs):
+        set_clauses = []
+        update_values = []
+
+        # Check if password is provided and hash it
+        if 'password' in kwargs:
+            kwargs['password'] = hash_password(kwargs['password'])
+
+        # Loop through the kwargs dictionary and create SET clauses
+        for field, value in kwargs.items():
+            set_clauses.append(f"{field} = %s")
+            update_values.append(value)
+
+        if set_clauses:
+            set_clause = ", ".join(set_clauses)
+            update_values.append(customer_id)
+
+            query = f"UPDATE users SET {set_clause} WHERE id = %s"
+            try:
+                self.cursor.execute(query, tuple(update_values))
+                self.db.commit()
+                return self.cursor.rowcount  # Return the number of rows updated
+            except mysql.connector.Error as err:
+                print(f"Error: {err}")
+                return 0
+        else:
+            print("No fields provided to update.")
+            return 0
+
+    # Delete customer
+    def delete_customer(self, customer_id):
+        query = "DELETE FROM users WHERE id = %s"
         try:
-            result = self.collection.delete_one({"_id": ObjectId(user_id)})
-            if result.deleted_count == 0:
-                raise Exception("No user found to delete.")
-            return result.deleted_count
-        except Exception as e:
-            raise Exception(f"Error deleting user: {e}")
+            self.cursor.execute(query, (customer_id,))
+            self.db.commit()
+            return self.cursor.rowcount  # Return the number of rows deleted
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            return 0
+
+    # Get all customers
+    def get_all_customers(self):
+        query = "SELECT * FROM users"
+        self.cursor.execute(query)
+        result = self.cursor.fetchall()
+        return result  # Return a list of all customers
+
