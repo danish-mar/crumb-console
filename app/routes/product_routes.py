@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 import os
+
+from app.auth.sidebar import get_sidebar_items
 from app.routes.routes import login_required
 
 from app.product_management.product_manager import ProductManager
@@ -167,17 +169,8 @@ def delete_product(product_id):
 @login_required(redirect_url="/products/manage")
 def manage_product_page():
     try:
-        sidebar_items = [
-            {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
-            {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
-            {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': 'active', 'submenu': [
-                {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
-                {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': 'active'},
-            ]},
-            {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
-            {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
-            {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
-        ]
+        sidebar_items = get_sidebar_items('admin')
+
         return render_template('product/manage_products.html', sidebar_items=sidebar_items)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -275,17 +268,8 @@ def update_category(category_id):
 @login_required(redirect_url="/categories/manage")
 def manage_catetgory_template():
     try:
-        sidebar_items = [
-            {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
-            {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': ''},
-            {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': 'active', 'submenu': [
-                {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': 'active'},
-                {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
-            ]},
-            {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
-            {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
-            {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
-        ]
+        sidebar_items = get_sidebar_items('admin')
+
         return render_template('product/manage_categories.html',sidebar_items=sidebar_items)
 
     except Exception as e:

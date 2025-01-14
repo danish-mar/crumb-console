@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app, render_template
 from app.order_management.order_manager import OrderManager
 from app.routes.routes import login_required
+from app.auth.sidebar import get_sidebar_items
 
 # Create the blueprint
 order_blueprint = Blueprint('order_blueprint', __name__)
@@ -101,18 +102,43 @@ def get_all_orders():
         return jsonify({"error": str(e)}), 500
 
 
+@order_blueprint.route('/api/orders/dispatch/<int:order_id>', methods=['POST'])
+@login_required()
+def dispatch_order_api(order_id):
+
+    # Call the dispatch order method
+    result = order_manager.dispatch_order(order_id)
+
+    if result['success']:
+        return jsonify({"success": True, "message": result['message']}), 200
+    else:
+        return jsonify({"success": False, "message": result['message']}), 400
+
+@order_blueprint.route('/api/orders/<int:order_id>/status', methods=['PUT'])
+@login_required()
+def update_order_status_route(order_id):
+    """API route to update the status of an order."""
+    try:
+        # Parse JSON data from the request body
+        data = request.get_json()
+        if not data or 'status' not in data:
+            return jsonify({"error": "Status is required"}), 400
+
+        status = data['status'].lower()
+        # Assuming `db_instance` is the instance of the class containing update_order_status
+        success = order_manager.update_order_status(order_id, status)
+
+        if success:
+            return jsonify({"message": f"Order {order_id} status updated to {status}"}), 200
+        else:
+            return jsonify({"error": "Order not found or status unchanged"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to update status: {str(e)}"}), 500
+
+
+
 @order_blueprint.route('/orders/<int:order_id>', methods=['GET'])
 @login_required(redirect_url='/order')
 def view_order(order_id):
-    sidebar_items = [
-        {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
-        {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': 'active'},
-        {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': '', 'submenu': [
-            {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
-            {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
-        ]},
-        {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
-        {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
-        {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
-    ]
+    sidebar_items = get_sidebar_items('admin')
     return render_template('order/view_order.html', sidebar_items=sidebar_items, order_id=order_id)

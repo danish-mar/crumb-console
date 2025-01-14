@@ -3,6 +3,7 @@ from functools import wraps
 import mysql.connector
 
 from app.auth.SessionManager import SessionManager
+from app.auth.sidebar import get_sidebar_items
 from app.customer_management.customer_manager import UserManager
 from app.db import get_mongo_db
 
@@ -95,16 +96,7 @@ def login():
 @login_required(redirect_url='/orders')
 def orders():
     # List of sidebar items
-    sidebar_items = [
-        {'name': 'Dashboard', 'url': '/dashboard', 'icon': 'fas fa-tachometer-alt', 'active': ''},
-        {'name': 'Orders', 'url': '/orders', 'icon': 'fas fa-shopping-cart', 'active': 'active'},
-        {'name': 'Products', 'url': '/products', 'icon': 'fas fa-box', 'active': '', 'submenu': [
-            {'name': 'Category', 'url': '/categories/manage', 'icon': 'fas fa-plus', 'active': ''},
-            {'name': 'Manage Products', 'url': '/products/manage', 'icon': 'fas fa-edit', 'active': ''},
-        ]},
-        {'name': 'Customers', 'url': '/customers', 'icon': 'fas fa-users', 'active': ''},
-        {'name': 'Statistics', 'url': '/statistics', 'icon': 'fas fa-chart-bar', 'active': ''},
-        {'name': 'Reports', 'url': '/reports', 'icon': 'fas fa-file-alt', 'active': ''}
-    ]
+    sidebar_items = get_sidebar_items('admin')
+
 
     return render_template('order/orders.html', sidebar_items=sidebar_items)

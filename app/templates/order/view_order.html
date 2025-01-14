@@ -77,6 +77,15 @@
             color: white;
         }
 
+        .disabled-button {
+            background: linear-gradient(135deg, #e6e6e6 0%, #cccccc 100%);
+            color: #a1a1a1;
+            cursor: not-allowed; /* Change the cursor to indicate a disabled state */
+            pointer-events: none; /* Disable all interactions */
+            filter: grayscale(100%);
+            box-shadow: none;
+        }
+
         .primary-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(224, 20, 20, 0.3);
@@ -120,6 +129,16 @@
             <button id="dispatch-order" class="action-button primary-button" disabled>
                 <i class="fas fa-truck"></i>
                 Dispatch Order
+            </button>
+
+            <button id="complete-order" class="action-button primary-button" disabled hidden>
+                <i class="fas fa-check"></i>
+                Complete Order
+            </button>
+
+            <button id="cancel-order" class="action-button primary-button" disabled>
+                <i class="fas fa-times"></i>
+                Cancel Order
             </button>
         </div>
 
@@ -178,6 +197,9 @@
 {% endblock %}
 
 {% block scripts %}
+
+
+
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
             const orderId = window.location.pathname.split('/').pop();
@@ -185,6 +207,8 @@
             // Enable buttons once data is loaded
             const downloadBtn = document.getElementById('download-receipt');
             const dispatchBtn = document.getElementById('dispatch-order');
+            const cancelBtn = document.getElementById('cancel-order');
+            const completeBtn = document.getElementById('complete-order');
 
             try {
                 const response = await fetch(`/api/orders/${orderId}`,{method: 'POST'});
@@ -201,14 +225,69 @@
                 document.getElementById('shipping-address').textContent = order.shipping_address || 'N/A';
 
                 const statusBadge = document.getElementById('order-status');
-                statusBadge.textContent = order.status;
+                // Update status badge
                 statusBadge.innerHTML = `
                     <i class="fas fa-circle"></i>
                     ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                 `;
-                if (order.status === 'pending') statusBadge.classList.add('status-pending');
-                if (order.status === 'completed') statusBadge.classList.add('status-completed');
-                if (order.status === 'cancelled') statusBadge.classList.add('status-cancelled');
+
+                // Reset status classes
+                statusBadge.className = 'status-badge'; // Add base class if needed
+                cancelBtn.hidden = true;
+                dispatchBtn.hidden = true;
+                completeBtn.hidden = true;
+
+                switch (order.status) {
+                    case 'pending':
+                        statusBadge.classList.add('status-pending');
+                        dispatchBtn.hidden = false;
+                        cancelBtn.hidden = false;
+
+                        // Ensure listeners are added only once
+                        if (!dispatchBtn.dataset.listenerAdded) {
+                            dispatchBtn.addEventListener('click', () => dispatchOrder(orderId));
+                            dispatchBtn.dataset.listenerAdded = true;
+                        }
+                        if (!cancelBtn.dataset.listenerAdded) {
+                            cancelBtn.addEventListener('click', () => cancelOrder(orderId, cancelBtn));
+                            cancelBtn.dataset.listenerAdded = true;
+                        }
+                        break;
+
+                    case 'dispatched':
+                        statusBadge.classList.add('status-dispatched');
+                        completeBtn.hidden = false;
+                        cancelBtn.hidden = false;
+
+                        if (!cancelBtn.dataset.listenerAdded) {
+                            cancelBtn.addEventListener('click', () => cancelOrder(orderId, cancelBtn));
+                            cancelBtn.dataset.listenerAdded = true;
+                            cancelBtn.disabled = false
+                        }
+                        if (!completeBtn.dataset.listnerAdded){
+                            completeBtn.addEventListener('click',() => completeOrder(orderId, completeBtn));
+                            completeBtn.dataset.listnerAdded = true;
+                            completeBtn.disabled = false;
+                        }
+                        break;
+
+                    case 'completed':
+                        statusBadge.classList.add('status-completed');
+                        break;
+
+                    case 'cancelled':
+                        statusBadge.classList.add('status-cancelled');
+                        break;
+
+                    default:
+                        console.error('Unknown status:', order.status);
+                }
+
+                // Disable buttons for non-pending/cancellable states
+                if (order.status !== 'pending' && order.status !== 'dispatched') {
+                    dispatchBtn.disabled = true;
+                    cancelBtn.disabled = true;
+                }
 
                 document.getElementById('order-date').textContent = new Date(order.order_place_date).toLocaleString();
                 document.getElementById('expected-delivery').textContent = new Date(order.expected_delivery_date).toLocaleString();
@@ -234,9 +313,9 @@
                 // Enable buttons and add event listeners
                 downloadBtn.disabled = false;
                 dispatchBtn.disabled = order.status !== 'pending';
+                cancelBtn.disabled = order.status !== 'pending';
 
                 downloadBtn.addEventListener('click', () => generateReceipt(order.id));
-                dispatchBtn.addEventListener('click', () => dispatchOrder(orderId));
 
             } catch (error) {
                 console.error('Error loading order:', error);
@@ -282,9 +361,85 @@
                     });
         }
 
+        async function cancelOrder(orderId,cancelButton) {
+
+
+            try {
+                // Disable the button to prevent duplicate requests
+                cancelButton.disabled = true;
+
+                const response = await fetch(`/api/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: 'cancelled' }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`Order ${orderId} has been cancelled successfully.`);
+
+                    // Update the UI
+                    const statusBadge = document.getElementById('order-status');
+                    statusBadge.textContent = 'Cancelled';
+                    statusBadge.className = 'status-cancelled';
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to cancel order: ${error.error || 'Unknown error'}`);
+                }
+            } catch (err) {
+                console.error('Error cancelling order:', err);
+                alert('An unexpected error occurred. Please try again later.');
+            } finally {
+                // Enable the button again if needed
+                cancelButton.disabled = false;
+            }
+        }
+
+        async function completeOrder(orderId, completeButton) {
+            try {
+                // Disable the button to prevent duplicate requests
+                completeButton.disabled = true;
+
+                const response = await fetch(`/api/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: 'completed' }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`Order ${orderId} has been marked as completed successfully.`);
+
+                    // Update the UI
+                    const statusBadge = document.getElementById('order-status');
+                    statusBadge.textContent = 'Completed';
+                    statusBadge.className = 'status-completed';
+
+                    // Hide the "Complete" button and disable other actions
+                    completeButton.hidden = true;
+                    const cancelBtn = document.getElementById('cancel-order');
+                    if (cancelBtn) cancelBtn.disabled = true;
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to mark order as completed: ${error.error || 'Unknown error'}`);
+                }
+            } catch (err) {
+                console.error('Error completing order:', err);
+                alert('An unexpected error occurred. Please try again later.');
+            } finally {
+                // Enable the button again if needed
+                completeButton.disabled = false;
+            }
+        }
+
+
         async function dispatchOrder(orderId) {
             try {
-                const response = await fetch(`/api/orders/${orderId}/dispatch`, {
+                const response = await fetch(`/api/orders/dispatch/${orderId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

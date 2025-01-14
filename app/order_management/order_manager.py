@@ -245,21 +245,6 @@ class OrderManager:
             if cursor:
                 cursor.close()
 
-    def update_order_status(self, order_id, status):
-        """Update the status of an order."""
-        cursor = None
-        try:
-            cursor = self.get_cursor()
-            query = "UPDATE orders SET status = %s WHERE id = %s"
-            cursor.execute(query, (status, order_id))
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            raise Exception(f"Error updating order status: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-
     def delete_order(self, order_id):
         """Delete an order and its associated details."""
         cursor = None
@@ -282,3 +267,59 @@ class OrderManager:
         finally:
             if cursor:
                 cursor.close()
+
+    def dispatch_order(self, order_id):
+        """Dispatch an order by updating the status to 'Dispatched'."""
+        cursor =  None
+
+        try:
+            cursor = self.get_cursor()
+            # Check if the order exists and is eligible for dispatch
+            cursor.execute("""
+                SELECT status FROM orders WHERE id = %s
+            """, (order_id,))
+            result = cursor.fetchone()
+
+            if not result:
+                return {"success": False, "message": "Order not found."}
+
+            if result['status'] in ['dispatched', 'completed']:
+                return {"success": False, "message": "Order already dispatched or completed."}
+
+            # Update the order status and expected_delivery_date
+            current_date = datetime.now()
+            cursor.execute("""
+                UPDATE orders
+                SET status = %s, expected_delivery_date = %s
+                WHERE id = %s
+            """, ('dispatched', current_date, order_id))
+            self.db.commit()
+
+            return {"success": True, "message": f"Order {order_id} dispatched successfully."}
+        except Exception as e:
+            self.db.rollback()  # Rollback in case of an error
+            return {"success": False, "message": f"Error dispatching order: {str(e)}"}
+        finally:
+            cursor.close()  # Close the cursor
+
+    def update_order_status(self, order_id, status):
+        """Update the status of an order."""
+        cursor = None
+        valid_statuses = {"dispatched", "pending", "cancelled", "completed"}
+        if status not in valid_statuses:
+            return "Invalid order status"
+
+        try:
+            cursor = self.get_cursor()
+            query = "UPDATE orders SET status = %s WHERE id = %s"
+            cursor.execute(query, (status, order_id))
+            self.db.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            self.db.rollback()
+            raise Exception(f"Error updating order status: {e}")
+        finally:
+            if cursor:
+                cursor.close()
+
+

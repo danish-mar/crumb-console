@@ -13,6 +13,7 @@ class DashboardController:
         today = datetime.now().date()
         yesterday = today - timedelta(days=1)
 
+        # Revenue Data (same as before)
         cursor.execute("""
             SELECT 
                 SUM(CASE WHEN DATE(order_place_date) = %s THEN total ELSE 0 END) as today_revenue,
@@ -23,6 +24,7 @@ class DashboardController:
 
         revenue_data = cursor.fetchone()
 
+        # Pending Orders Data (same as before)
         cursor.execute("""
             SELECT COUNT(*) as pending_count
             FROM orders
@@ -30,6 +32,7 @@ class DashboardController:
         """)
         pending_orders = cursor.fetchone()['pending_count']
 
+        # Stock Data (same as before)
         cursor.execute("""
             SELECT 
                 COUNT(*) as out_of_stock,
@@ -39,6 +42,7 @@ class DashboardController:
         """)
         stock_data = cursor.fetchone()
 
+        # Review Data (same as before)
         cursor.execute("""
             SELECT 
                 COUNT(*) as total_reviews,
@@ -52,6 +56,40 @@ class DashboardController:
         satisfaction_percentage = 0
         if review_data['total_reviews'] > 0:
             satisfaction_percentage = (review_data['positive_reviews'] / review_data['total_reviews']) * 100
+
+        # New and Old Customers Data
+        cursor.execute("""
+            SELECT COUNT(*) as total_customers
+            FROM users
+            WHERE status = 'active'
+        """)
+        total_customers = cursor.fetchone()['total_customers']
+
+        cursor.execute("""
+            SELECT COUNT(*) as new_customers
+            FROM users
+            WHERE DATE(joined_at) = %s
+        """, (today,))
+        new_customers = cursor.fetchone()['new_customers']
+
+        cursor.execute("""
+            SELECT COUNT(*) as old_customers
+            FROM users
+            WHERE DATE(joined_at) < %s AND status = 'active'
+        """, (today,))
+        old_customers = cursor.fetchone()['old_customers']
+
+        # Customers who spent the most
+        cursor.execute("""
+            SELECT u.id, u.first_name, u.last_name, SUM(o.total) as total_spent
+            FROM users u
+            JOIN orders o ON u.id = o.user_id
+            WHERE o.status = 'completed'
+            GROUP BY u.id
+            ORDER BY total_spent DESC
+            LIMIT 5
+        """)
+        top_spending_customers = cursor.fetchall()
 
         cursor.close()
 
@@ -69,6 +107,12 @@ class DashboardController:
             'customer_satisfaction': {
                 'percentage': round(satisfaction_percentage, 1),
                 'total_reviews': review_data['total_reviews']
+            },
+            'customers': {
+                'total_customers': total_customers,
+                'new_customers': new_customers,
+                'old_customers': old_customers,
+                'top_spending_customers': top_spending_customers
             }
         }
 
