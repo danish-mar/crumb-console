@@ -2,17 +2,47 @@
 import mysql
 import mysql.connector
 
+from app import get_db
+
 
 class ProductManager:
     def __init__(self, db_connection):
         """Initialize ProductManager with a database connection."""
-        print("Initializing Product Manager")
+        if not db_connection:
+            raise ValueError("Database connection cannot be None")
+
         self.db = db_connection
+        print(f"Initializing Product Manager with: {self.db}")
+
+    def ensure_connection(self):
+        """Ensure the database connection is valid and active."""
+        if not self.db:
+            raise ValueError("Database connection is not initialized")
+
+        try:
+            self.db.ping(reconnect=True)
+        except Exception as e:
+            print(f"Connection error: {e}")
+            # Try to get a new connection from the pool
+
+            self.db = get_db()
+            if not self.db:
+                raise ValueError("Could not establish database connection")
 
     def get_cursor(self):
-        """Get a new cursor, ping the connection first to ensure it's alive."""
-        self.db.ping(reconnect=True)
-        return self.db.cursor(dictionary=True)
+        """Get a new cursor, ensuring the connection is alive first."""
+        print(f"Product manager getting cursor from: {self.db}")
+
+        self.ensure_connection()
+
+        try:
+            cursor = self.db.cursor(dictionary=True)
+            if not cursor:
+                raise ValueError("Failed to create cursor")
+            return cursor
+        except Exception as e:
+            print(f"Error creating cursor: {e}")
+            raise
 
     def add_product(self, name, category_id, price, stock, description, is_available, weight_in_g, tags, image_url="Wil.jpg"):
         """Add a new product to the database."""
@@ -155,7 +185,7 @@ class ProductManager:
         """Get all categories."""
         cursor = None
         try:
-            cursor = self.get_cursor()
+            cursor = get_db().cursor(dictionary=True)
             query = "SELECT * FROM product_category"
             cursor.execute(query)
             return cursor.fetchall()
@@ -185,3 +215,34 @@ class ProductManager:
         finally:
             if cursor:
                 cursor.close()
+
+    def fetch_all_products(self):
+        """
+        Fetches all products from the database, including their categories.
+
+        Returns:
+            A list of dictionaries, where each dictionary represents a product
+            with its associated category name.
+        """
+        try:
+            print(f"Fetching all products.")
+            cursor = get_db().cursor(dictionary=True)
+            print(cursor)
+
+            # Execute the query to fetch all products with their categories
+            query = """
+                SELECT p.*, c.name as category_name
+                FROM products p
+                RIGHT JOIN product_category c ON p.category = c.id
+                WHERE p.id IS NOT NULL AND p.name IS NOT NULL
+            """
+            cursor.execute(query)
+            products = cursor.fetchall()
+
+            return products
+        except mysql.connector.Error as e:
+            print(f"Error fetching products: {e}")
+            raise Exception(f"Error fetching products: {e}")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            raise

@@ -19,6 +19,7 @@ def init_product_manager(db_connection):
     global product_manager
     print("Product Manager : Initializing Routes ")
     if not product_manager:
+        print(db_connection)
         product_manager = ProductManager(db_connection)
 
 
@@ -40,20 +41,7 @@ def save_image(image):
 def fetch_all_products():
     try:
 
-        cursor = product_manager.get_cursor()
-
-        cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
-        cursor.execute("SELECT COUNT(*) as count FROM orders")
-        count = cursor.fetchone()
-        print(f"Total orders in database: {count['count']}")
-        query = """
-            SELECT p.*, c.name as category_name
-            FROM products p
-                     RIGHT JOIN product_category c ON p.category = c.id
-            WHERE p.id IS NOT NULL AND p.name IS NOT NULL
-        """
-        cursor.execute(query)
-        products = cursor.fetchall()
+        products = product_manager.fetch_all_products()
 
         for product in products:
             print(product["image_url"])

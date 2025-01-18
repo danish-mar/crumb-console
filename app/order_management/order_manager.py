@@ -2,16 +2,43 @@ from datetime import datetime
 
 import mysql.connector
 
+from app import get_db
+
 
 class OrderManager:
     def __init__(self, db_connection):
         """Initialize OrderManager with a database connection."""
         self.db = db_connection
 
+    def ensure_connection(self):
+        """Ensure the database connection is valid and active."""
+        if not self.db:
+            raise ValueError("Database connection is not initialized")
+
+        try:
+            self.db.ping(reconnect=True)
+        except Exception as e:
+            print(f"Connection error: {e}")
+            # Try to get a new connection from the pool
+
+            self.db = get_db()
+            if not self.db:
+                raise ValueError("Could not establish database connection")
+
     def get_cursor(self):
-        """Get a new cursor, ping the connection first to ensure it's alive."""
-        self.db.ping(reconnect=True)
-        return self.db.cursor(dictionary=True)
+        """Get a new cursor, ensuring the connection is alive first."""
+        print(f"Product manager getting cursor from: {self.db}")
+
+        self.ensure_connection()
+
+        try:
+            cursor = self.db.cursor(dictionary=True)
+            if not cursor:
+                raise ValueError("Failed to create cursor")
+            return cursor
+        except Exception as e:
+            print(f"Error creating cursor: {e}")
+            raise
 
     def get_order(self, order_id):
         """Get complete order details, including customer and product information."""
@@ -116,7 +143,6 @@ class OrderManager:
         """Get all orders along with customer details."""
         cursor = None
         try:
-            self.db.ping(reconnect=True)
             cursor = self.get_cursor()
             # # Diagnostic queries
             # cursor.execute("SELECT @@session.transaction_isolation")
@@ -270,7 +296,7 @@ class OrderManager:
 
     def dispatch_order(self, order_id):
         """Dispatch an order by updating the status to 'Dispatched'."""
-        cursor =  None
+        cursor = None
 
         try:
             cursor = self.get_cursor()

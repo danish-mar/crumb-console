@@ -100,13 +100,15 @@ def delete_customer(customer_id):
 @login_required()
 def get_all_customers():
     customers = customer_manager.get_all_customers()
+
     if customers:
         return jsonify({'customers': customers}), 200
     else:
         return jsonify({'error': 'No customers found'}), 404
 
+
 @customer_routes.route('/customers')
 @login_required()
 def customer_management():
     sidebar = get_sidebar_items("admin")
-    return render_template('users/customer.html',sidebar_items=sidebar)
+    return render_template('users/customer.html', sidebar_items=sidebar)

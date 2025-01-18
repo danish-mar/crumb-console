@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template
 from datetime import datetime, timedelta
+
+from app import get_db
 from app.routes.routes import login_required
 
 
@@ -7,8 +9,38 @@ class DashboardController:
     def __init__(self, db_connection):
         self.db = db_connection
 
+    def ensure_connection(self):
+        """Ensure the database connection is valid and active."""
+        if not self.db:
+            raise ValueError("Database connection is not initialized")
+
+        try:
+            self.db.ping(reconnect=True)
+        except Exception as e:
+            print(f"Connection error: {e}")
+            # Try to get a new connection from the pool
+
+            self.db = get_db()
+            if not self.db:
+                raise ValueError("Could not establish database connection")
+
+    def get_cursor(self):
+        """Get a new cursor, ensuring the connection is alive first."""
+        print(f"Product manager getting cursor from: {self.db}")
+
+        self.ensure_connection()
+
+        try:
+            cursor = self.db.cursor(dictionary=True)
+            if not cursor:
+                raise ValueError("Failed to create cursor")
+            return cursor
+        except Exception as e:
+            print(f"Error creating cursor: {e}")
+            raise
+
     def get_dashboard_overview(self):
-        cursor = self.db.cursor(dictionary=True)
+        cursor = self.get_cursor()
 
         today = datetime.now().date()
         yesterday = today - timedelta(days=1)
@@ -117,7 +149,7 @@ class DashboardController:
         }
 
     def get_recent_orders(self, limit=5):
-        cursor = self.db.cursor(dictionary=True)
+        cursor = self.get_cursor()
 
         cursor.execute("""
             SELECT 

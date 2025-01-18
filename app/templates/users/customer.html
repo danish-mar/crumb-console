@@ -171,7 +171,9 @@
             try {
                 const response = await fetch('/api/customer/all');
                 const data = await response.json();
+                console.log(data);
                 customers = data.customers;
+                console.log(customers);
                 filteredCustomers = [...customers];
                 updateCustomerStats();
                 renderCustomers();
@@ -180,25 +182,23 @@
             }
         }
 
-        // Update customer statistics
         function updateCustomerStats() {
             document.getElementById('totalCustomers').textContent = customers.length;
-            const activeCount = customers.filter(customer => customer[9] === 'active').length;
+            const activeCount = customers.filter(customer => customer.status === 'active').length;
             document.getElementById('activeCustomers').textContent = activeCount;
         }
 
-        // Search functionality
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
 
             filteredCustomers = customers.filter(customer => {
-                const fullName = `${customer[1]} ${customer[2]}`.toLowerCase();
-                const email = customer[3].toLowerCase();
-                const phone = customer[4].toLowerCase();
+                const fullName = `${customer.first_name} ${customer.last_name || ''}`.toLowerCase();
+                const email = customer.email.toLowerCase();
+                const phone = (customer.phone || '').toLowerCase();
 
                 return fullName.includes(searchTerm) ||
                     email.includes(searchTerm) ||
-                    phone.includes(searchTerm);
+                    (phone && phone.includes(searchTerm));
             });
 
             renderCustomers();
@@ -210,7 +210,6 @@
             return new Date(dateString).toLocaleDateString(undefined, options);
         }
 
-        // Render customers table
         function renderCustomers() {
             const tbody = document.getElementById('customerTableBody');
             const emptyState = document.getElementById('emptyState');
@@ -233,33 +232,33 @@
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 h-10 w-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <span class="text-red-500 font-medium">${customer[1].charAt(0)}${customer[2].charAt(0)}</span>
+                        <span class="text-red-500 font-medium">${customer.first_name.charAt(0)}${customer.last_name ? customer.last_name.charAt(0) : ''}</span>
                     </div>
                     <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-900">${customer[1]} ${customer[2]}</div>
-                        <div class="text-sm text-gray-500">${customer[8]}</div>
+                        <div class="text-sm font-medium text-gray-900">${customer.first_name} ${customer.last_name || ''}</div>
+                        <div class="text-sm text-gray-500">${customer.role}</div>
                     </div>
                 </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${customer[3]}</div>
+                <div class="text-sm text-gray-900">${customer.email}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${customer[4]}</div>
+                <div class="text-sm text-gray-900">${customer.phone || '-'}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${customer[9] === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${customer[9]}
+                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${customer.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${customer.status}
                 </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                ${formatDate(customer[6])}
+                ${formatDate(customer.joined_at)}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button onclick="editCustomer(${customer[0]})" class="text-blue-600 hover:text-blue-900 mr-3 hover:scale-110 transform transition-transform">
+                <button onclick="editCustomer(${customer.id})" class="text-blue-600 hover:text-blue-900 mr-3 hover:scale-110 transform transition-transform">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteCustomer(${customer[0]})" class="text-red-600 hover:text-red-900 hover:scale-110 transform transition-transform">
+                <button onclick="deleteCustomer(${customer.id})" class="text-red-600 hover:text-red-900 hover:scale-110 transform transition-transform">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -334,12 +333,12 @@
                 const customer = data.customer;
 
                 document.getElementById('modalTitle').textContent = 'Edit Customer';
-                document.getElementById('customerId').value = id;
-                document.getElementById('firstName').value = customer[1];
-                document.getElementById('lastName').value = customer[2];
-                document.getElementById('email').value = customer[3];
-                document.getElementById('phone').value = customer[4];
-                document.getElementById('defaultLocation').value = customer[7] || '';
+                document.getElementById('customerId').value = customer.id;
+                document.getElementById('firstName').value = customer.first_name;
+                document.getElementById('lastName').value = customer.last_name || '';
+                document.getElementById('email').value = customer.email;
+                document.getElementById('phone').value = customer.phone || '';
+                document.getElementById('defaultLocation').value = customer.default_location || '';
 
                 document.getElementById('customerModal').classList.remove('hidden');
                 document.getElementById('customerModal').classList.add('flex');
